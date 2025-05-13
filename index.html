@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>旦仔时间管理器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36CFC9',
+            accent: '#FF7D00',
+            neutral: '#86909C',
+            'neutral-light': '#F2F3F5',
+            'neutral-dark': '#4E5969',
+            success: '#00B42A',
+            warning: '#FF7D00',
+            danger: '#F53F3F',
+          },
+          fontFamily: {
+            inter: ['Inter', 'sans-serif'],
+          },
+          boxShadow: {
+            'card': '0 4px 20px rgba(0, 0, 0, 0.08)',
+            'card-hover': '0 8px 30px rgba(0, 0, 0, 0.12)',
+          }
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .transition-transform-opacity {
+        transition-property: transform, opacity;
+      }
+      .backdrop-blur {
+        backdrop-filter: blur(8px);
+      }
+    }
+  </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+  <!-- 顶部导航栏 -->
+  <header class="bg-white shadow-sm sticky top-0 z-50 transition-all duration-300" id="navbar">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- 品牌标识 -->
+        <div class="flex items-center space-x-2">
+          <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center text-white">
+            <i class="fa-regular fa-clock text-xl"></i>
+          </div>
+          <span class="text-xl font-bold text-gray-900">旦仔时间管理器</span>
+        </div>
+        
+        <!-- 主导航 - 桌面端 -->
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="#dashboard" class="text-primary font-medium hover:text-primary/80 transition-colors">仪表盘</a>
+          <a href="#tasks" class="text-gray-600 font-medium hover:text-primary transition-colors">任务</a>
+          <a href="#calendar" class="text-gray-600 font-medium hover:text-primary transition-colors">日历</a>
+          <a href="#analytics" class="text-gray-600 font-medium hover:text-primary transition-colors">分析</a>
+        </nav>
+        
+        <!-- 用户区域 -->
+        <div class="flex items-center space-x-4">
+          <button class="p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors">
+            <i class="fa-solid fa-bell"></i>
+          </button>
+          <div class="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
+            <img src="https://picsum.photos/200/200?random=1" alt="用户头像" class="h-full w-full object-cover">
+          </div>
+          <!-- 移动端菜单按钮 -->
+          <button class="md:hidden p-2 rounded-md text-gray-500 hover:bg-gray-100 transition-colors" id="menuBtn">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 移动端导航菜单 -->
+    <div class="md:hidden hidden transition-all duration-300 ease-in-out" id="mobileMenu">
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white shadow-lg">
+        <a href="#dashboard" class="block px-3 py-2 rounded-md text-base font-medium text-primary bg-blue-50">仪表盘</a>
+        <a href="#tasks" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary hover:bg-blue-50">任务</a>
+        <a href="#calendar" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary hover:bg-blue-50">日历</a>
+        <a href="#analytics" class="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-primary hover:bg-blue-50">分析</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- 欢迎横幅 -->
+    <section class="mb-8">
+      <div class="bg-gradient-to-r from-primary to-blue-700 rounded-2xl p-6 md:p-8 shadow-lg">
+        <div class="flex flex-col md:flex-row md:items-center justify-between">
+          <div class="mb-6 md:mb-0">
+            <h1 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-white mb-2 text-shadow">欢迎回来，旦仔用户</h1>
+            <p class="text-blue-100 text-lg max-w-2xl">今天是个高效日！你有 5 个待完成任务和 2 个即将截止的项目</p>
+          </div>
+          <div class="flex space-x-4">
+            <button class="bg-white text-primary px-6 py-3 rounded-lg font-medium shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5">
+              <i class="fa-solid fa-plus mr-2"></i>新建任务
+            </button>
+            <button class="bg-primary/20 text-white border border-white/30 px-6 py-3 rounded-lg font-medium hover:bg-primary/30 transition-all">
+              <i class="fa-solid fa-calendar-day mr-2"></i>查看日程
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 数据概览卡片 -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- 完成任务卡片 -->
+      <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-all duration-300 transform hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-neutral text-sm font-medium">今日完成任务</p>
+            <h3 class="text-3xl font-bold mt-2">12</h3>
+            <p class="text-success text-sm mt-1 flex items-center">
+              <i class="fa-solid fa-arrow-up mr-1"></i> 比昨天多 2 个
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center text-primary">
+            <i class="fa-solid fa-check-circle text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 专注时间卡片 -->
+      <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-all duration-300 transform hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-neutral text-sm font-medium">今日专注时间</p>
+            <h3 class="text-3xl font-bold mt-2">4.5h</h3>
+            <p class="text-success text-sm mt-1 flex items-center">
+              <i class="fa-solid fa-arrow-up mr-1"></i> 比昨天多 1h
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+            <i class="fa-solid fa-clock text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 待办任务卡片 -->
+      <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-all duration-300 transform hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-neutral text-sm font-medium">待办任务</p>
+            <h3 class="text-3xl font-bold mt-2">5</h3>
+            <p class="text-danger text-sm mt-1 flex items-center">
+              <i class="fa-solid fa-exclamation-circle mr-1"></i> 2 个即将截止
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center text-red-600">
+            <i class="fa-solid fa-tasks text-xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 生产力卡片 -->
+      <div class="bg-white rounded-xl shadow-card p-6 hover:shadow-card-hover transition-all duration-300 transform hover:-translate-y-1">
+        <div class="flex items-start justify-between">
+          <div>
+            <p class="text-neutral text-sm font-medium">生产力指数</p>
+            <h3 class="text-3xl font-bold mt-2">82%</h3>
+            <p class="text-success text-sm mt-1 flex items-center">
+              <i class="fa-solid fa-arrow-up mr-1"></i> 本周上升 5%
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+            <i class="fa-solid fa-bolt text-xl"></i>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 主要内容区域 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- 左侧任务列表 -->
+      <div class="lg:col-span-2 space-y-8">
+        <!-- 任务列表 -->
+        <section id="tasks" class="bg-white rounded-xl shadow-card p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold">我的任务</h2>
+            <div class="flex space-x-2">
+              <button class="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full">全部</button>
+              <button class="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">今天</button>
+              <button class="px-3 py-1 text-sm bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 transition-colors">本周</button>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <!-- 任务项 1 -->
+            <div class="p-4 border border-gray-100 rounded-lg hover:border-primary/30 hover:bg-blue-50/50 transition-all cursor-pointer">
+              <div class="flex items-start">
+                <div class="flex-shrink-0 mr-3">
+                  <input type="checkbox" class="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary">
+                </div>
+                <div class="flex-grow">
+                  <div class="flex items-center justify-between mb-1">
+                    <h3 class="font-medium">完成产品需求文档</h3>
+                    <span class="px-2 py-0.5 text-xs bg-red-100 text-red-600 rounded-full">紧急</span>
+                  </div>
+                  <p class="text-sm text-neutral mb-2">完成新版旦仔时间管理器的需求分析和功能规划</p>
+                  <div class="flex items-center text-xs text-neutral">
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-calendar mr-1"></i> 今天</span>
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-clock mr-1"></i> 2小时</span>
+                    <span class="flex items-center"><i class="fa-solid fa-folder mr-1"></i> 产品设计</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 任务项 2 -->
+            <div class="p-4 border border-gray-100 rounded-lg hover:border-primary/30 hover:bg-blue-50/50 transition-all cursor-pointer">
+              <div class="flex items-start">
+                <div class="flex-shrink-0 mr-3">
+                  <input type="checkbox" class="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary">
+                </div>
+                <div class="flex-grow">
+                  <div class="flex items-center justify-between mb-1">
+                    <h3 class="font-medium">设计UI原型</h3>
+                    <span class="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-600 rounded-full">中等</span>
+                  </div>
+                  <p class="text-sm text-neutral mb-2">为时间追踪功能设计用户界面和交互流程</p>
+                  <div class="flex items-center text-xs text-neutral">
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-calendar mr-1"></i> 明天</span>
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-clock mr-1"></i> 3小时</span>
+                    <span class="flex items-center"><i class="fa-solid fa-folder mr-1"></i> UI设计</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 任务项 3 -->
+            <div class="p-4 border border-gray-100 rounded-lg hover:border-primary/30 hover:bg-blue-50/50 transition-all cursor-pointer">
+              <div class="flex items-start">
+                <div class="flex-shrink-0 mr-3">
+                  <input type="checkbox" class="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary" checked>
+                </div>
+                <div class="flex-grow">
+                  <div class="flex items-center justify-between mb-1">
+                    <h3 class="font-medium line-through text-neutral">团队周会</h3>
+                    <span class="px-2 py-0.5 text-xs bg-green-100 text-green-600 rounded-full">已完成</span>
+                  </div>
+                  <p class="text-sm text-neutral mb-2 line-through">讨论项目进度和下周工作计划</p>
+                  <div class="flex items-center text-xs text-neutral">
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-calendar mr-1"></i> 昨天</span>
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-clock mr-1"></i> 1小时</span>
+                    <span class="flex items-center"><i class="fa-solid fa-folder mr-1"></i> 团队管理</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 任务项 4 -->
+            <div class="p-4 border border-gray-100 rounded-lg hover:border-primary/30 hover:bg-blue-50/50 transition-all cursor-pointer">
+              <div class="flex items-start">
+                <div class="flex-shrink-0 mr-3">
+                  <input type="checkbox" class="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary">
+                </div>
+                <div class="flex-grow">
+                  <div class="flex items-center justify-between mb-1">
+                    <h3 class="font-medium">撰写用户调研报告</h3>
+                    <span class="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-600 rounded-full">中等</span>
+                  </div>
+                  <p class="text-sm text-neutral mb-2">整理用户反馈并撰写分析报告</p>
+                  <div class="flex items-center text-xs text-neutral">
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-calendar mr-1"></i> 周五</span>
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-clock mr-1"></i> 2.5小时</span>
+                    <span class="flex items-center"><i class="fa-solid fa-folder mr-1"></i> 市场调研</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 任务项 5 -->
+            <div class="p-4 border border-gray-100 rounded-lg hover:border-primary/30 hover:bg-blue-50/50 transition-all cursor-pointer">
+              <div class="flex items-start">
+                <div class="flex-shrink-0 mr-3">
+                  <input type="checkbox" class="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary">
+                </div>
+                <div class="flex-grow">
+                  <div class="flex items-center justify-between mb-1">
+                    <h3 class="font-medium">准备演示文稿</h3>
+                    <span class="px-2 py-0.5 text-xs bg-blue-100 text-blue-600 rounded-full">普通</span>
+                  </div>
+                  <p class="text-sm text-neutral mb-2">为下周的产品演示准备幻灯片</p>
+                  <div class="flex items-center text-xs text-neutral">
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-calendar mr-1"></i> 周六</span>
+                    <span class="flex items-center mr-4"><i class="fa-regular fa-clock mr-1"></i> 1.5小时</span>
+                    <span class="flex items-center"><i class="fa-solid fa-folder mr-1"></i> 演示</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-6 text-center">
+            <button class="text-primary hover:text-primary/80 font-medium transition-colors">
+              查看全部任务 <i class="fa-solid fa-chevron-right ml-1 text-xs"></i>
+            </button>
+          </div>
+        </section>
+        
+        <!-- 时间追踪器 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <h2 class="text-xl font-bold mb-6">时间追踪器</h2>
+          
+          <div class="flex flex-col items-center justify-center py-8">
+            <div class="relative">
+              <div class="w-64 h-64 rounded-full bg-primary/5 flex items-center justify-center border-8 border-primary/20">
+                <div class="text-center">
+                  <div class="text-4xl font-bold text-gray-800" id="timer-display">00:30:00</div>
+                  <p class="text-neutral mt-2">正在进行: 完成产品需求文档</p>
+                </div>
+              </div>
+              <div class="absolute -bottom-4 -right-4 bg-primary text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-primary/90 transition-colors" id="timer-control">
+                <i class="fa-solid fa-pause"></i>
+              </div>
+            </div>
+            
+            <div class="mt-8 flex space-x-4">
+              <button class="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                <i class="fa-solid fa-plus mr-2"></i> 添加任务
+              </button>
+              <button class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg">
+                <i class="fa-solid fa-flag-checkered mr-2"></i> 完成计时
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      <!-- 右侧边栏 -->
+      <div class="space-y-8">
+        <!-- 专注时间统计 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <h2 class="text-xl font-bold mb-6">专注时间统计</h2>
+          
+          <div class="h-64 mb-4">
+            <canvas id="focusChart"></canvas>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <div class="bg-gray-50 p-3 rounded-lg">
+              <p class="text-sm text-neutral">本周平均</p>
+              <p class="text-xl font-bold">4.2小时</p>
+            </div>
+            <div class="bg-gray-50 p-3 rounded-lg">
+              <p class="text-sm text-neutral">最长专注记录</p>
+              <p class="text-xl font-bold">6.5小时</p>
+            </div>
+          </div>
+        </section>
+        
+        <!-- 项目进度 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <h2 class="text-xl font-bold mb-6">项目进度</h2>
+          
+          <div class="space-y-6">
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="font-medium">旦仔时间管理器 v2.0</span>
+                <span class="text-sm text-primary font-medium">68%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-primary h-2.5 rounded-full" style="width: 68%"></div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="font-medium">用户体验优化</span>
+                <span class="text-sm text-green-600 font-medium">92%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-green-500 h-2.5 rounded-full" style="width: 92%"></div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="font-medium">数据分析模块</span>
+                <span class="text-sm text-yellow-600 font-medium">45%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-yellow-500 h-2.5 rounded-full" style="width: 45%"></div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="font-medium">移动端适配</span>
+                <span class="text-sm text-red-600 font-medium">23%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div class="bg-red-500 h-2.5 rounded-full" style="width: 23%"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- 即将到来的截止日期 -->
+        <section class="bg-white rounded-xl shadow-card p-6">
+          <h2 class="text-xl font-bold mb-6">即将到来的截止日期</h2>
+          
+          <div class="space-y-4">
+            <div class="flex items-center p-3 border border-gray-100 rounded-lg hover:border-primary/30 hover:bg-blue-50/50 transition-all">
+              <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-4">
+                <i class="fa-solid fa-file-text"></i>
+              </div>
+              <div class="flex-grow">
+                <h3 class="font-medium">需求文档提交</h3>
+                <p class="text-sm text-neutral">明天 18:00 截止</p>
+              </div>
+              <div class="text-red-500">
+                <i class="fa-solid fa-exclamation-circle"></i>
+              </div>
+            </div>
+            
+            <div class="flex items-center p-3 border border-gray-100 rounded-lg hover:border-primary/30 hover:bg-blue-50/50 transition-all">
+              <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-4">
+                <i class="fa-solid fa-presentation"></i>
+              </div>
+              <div class="flex-grow">
+                <h3 class="font-medium">产品演示</h3>
+                <p class="text-sm text-neutral">周五 10:30 开始</p>
+              </div>
+              <div class="text-yellow-500">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+            </div>
+            
+            <div class="flex items-center p-3 border border-gray-100 rounded-lg hover:border-primary/30 hover:bg-blue-50/50 transition-all">
+              <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
+                <i class="fa-solid fa-users"></i>
+              </div>
+              <div class="flex-grow">
+                <h3 class="font-medium">团队会议</h3>
+                <p class="text-sm text-neutral">下周一 14:00</p>
+              </div>
+              <div class="text-blue-500">
+                <i class="fa-solid fa-calendar-day"></i>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-white border-t border-gray-200 py-6">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="mb-4 md:mb-0">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white">
+              <i class="fa-regular fa-clock"></i>
+            </div>
+            <span class="text-lg font-bold text-gray-900">旦仔时间管理器</span>
+          </div>
+          <p class="text-sm text-neutral mt-2">让时间管理变得简单高效</p>
+        </div>
+        
+        <div class="flex space-x-8">
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900 mb-2">功能</h3>
+            <ul class="space-y-1">
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">任务管理</a></li>
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">时间追踪</a></li>
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">数据分析</a></li>
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">项目管理</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900 mb-2">支持</h3>
+            <ul class="space-y-1">
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">帮助中心</a></li>
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">使用教程</a></li>
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">联系我们</a></li>
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">常见问题</a></li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900 mb-2">公司</h3>
+            <ul class="space-y-1">
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">关于我们</a></li>
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">隐私政策</a></li>
+              <li><a href="#" class="text-sm text-neutral hover:text-primary">服务条款</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-8 pt-6 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center">
+        <p class="text-sm text-neutral">&copy; 2025 旦仔时间管理器. 保留所有权利</p>
+        <div class="mt-4 md:mt-0 flex space-x-4">
+          <a href="#" class="text-neutral hover:text-primary transition-colors"><i class="fa-brands fa-github"></i></a>
+          <a href="#" class="text-neutral hover:text-primary transition-colors"><i class="fa-brands fa-twitter"></i></a>
+          <a href="#" class="text-neutral hover:text-primary transition-colors"><i class="fa-brands fa-linkedin"></i></a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 任务添加模态框 -->
+  <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur flex items-center justify-center z-50 hidden" id="taskModal">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 transform transition-all duration-300 scale-95 opacity-0" id="modalContent">
+      <div class="p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-bold">添加新任务</h3>
+          <button class="text-gray-500 hover:text-gray-700" id="closeModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        
+        <form>
+          <div class="mb-4">
+            <label for="taskName" class="block text-sm font-medium text-gray-700 mb-1">任务名称</label>
+            <input type="text" id="taskName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+          </div>
+          
+          <div class="mb-4">
+            <label for="taskDescription" class="block text-sm font-medium text-gray-700 mb-1">任务描述</label>
+            <textarea id="taskDescription" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"></textarea>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label for="taskPriority" class="block text-sm font-medium text-gray-700 mb-1">优先级</label>
+              <select id="taskPriority" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                <option value="low">低</option>
+                <option value="medium" selected>中</option>
+                <option value="high">高</option>
+                <option value="urgent">紧急</option>
+              </select>
+            </div>
+            
+            <div>
+              <label for="taskCategory" class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+              <select id="taskCategory" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                <option value="work">工作</option>
+                <option value="study">学习</option>
+                <option value="personal">个人</option>
+                <option value="health">健康</option>
+                <option value="other">其他</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="mb-6">
+            <label for="taskDueDate" class="block text-sm font-medium text-gray-700 mb-1">截止日期</label>
+            <input type="date" id="taskDueDate" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+          </div>
+          
+          <div class="flex justify-end space-x-3">
+            <button type="button" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50" id="cancelTask">取消</button>
+            <button type="button" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 shadow-md hover:shadow-lg">添加任务</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 导航栏滚动效果
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 10) {
+        navbar.classList.add('shadow-md');
+        navbar.classList.remove('shadow-sm');
+      } else {
+        navbar.classList.remove('shadow-md');
+        navbar.classList.add('shadow-sm');
+      }
+    });
+    
+    // 移动端菜单切换
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    menuBtn.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+    
+    // 时间追踪器控制
+    const timerDisplay = document.getElementById('timer-display');
+    const timerControl = document.getElementById('timer-control');
+    let timerRunning = true;
+    let seconds = 30 * 60; // 30分钟
+    
+    function updateTimer() {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      timerDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      
+      if (timerRunning && seconds > 0) {
+        seconds--;
+        setTimeout(updateTimer, 1000);
+      }
+    }
+    
+    updateTimer();
+    
+    timerControl.addEventListener('click', () => {
+      timerRunning = !timerRunning;
+      
+      if (timerRunning) {
+        timerControl.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        updateTimer();
+      } else {
+        timerControl.innerHTML = '<i class="fa-solid fa-play"></i>';
+      }
+    });
+    
+    // 专注时间统计图表
+    const ctx = document.getElementById('focusChart').getContext('2d');
+    const focusChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+        datasets: [{
+          label: '专注时间(小时)',
+          data: [3.5, 4.2, 3.8, 5.1, 4.7, 2.3, 3.9],
+          backgroundColor: 'rgba(22, 93, 255, 0.1)',
+          borderColor: '#165DFF',
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true,
+          pointBackgroundColor: '#FFFFFF',
+          pointBorderColor: '#165DFF',
+          pointBorderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            titleColor: '#1F2937',
+            bodyColor: '#4B5563',
+            borderColor: '#E5E7EB',
+            borderWidth: 1,
+            padding: 12,
+            displayColors: false,
+            callbacks: {
+              label: function(context) {
+                return `${context.parsed.y} 小时`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            beginAtZero: true,
+            grid: {
+              borderDash: [2, 2]
+            },
+            ticks: {
+              callback: function(value) {
+                return value + 'h';
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    // 模态框控制
+    const taskModal = document.getElementById('taskModal');
+    const modalContent = document.getElementById('modalContent');
+    const closeModal = document.getElementById('closeModal');
+    const cancelTask = document.getElementById('cancelTask');
+    
+    function openModal() {
+      taskModal.classList.remove('hidden');
+      setTimeout(() => {
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+    
+    function closeModalFunc() {
+      modalContent.classList.remove('scale-100', 'opacity-100');
+      modalContent.classList.add('scale-95', 'opacity-0');
+      setTimeout(() => {
+        taskModal.classList.add('hidden');
+      }, 300);
+    }
+    
+    // 打开模态框的按钮
+    document.querySelector('button:has(i.fa-plus)').addEventListener('click', openModal);
+    
+    closeModal.addEventListener('click', closeModalFunc);
+    cancelTask.addEventListener('click', closeModalFunc);
+    
+    // 点击模态框外部关闭
+    taskModal.addEventListener('click', (e) => {
+      if (e.target === taskModal) {
+        closeModalFunc();
+      }
+    });
+    
+    // 添加任务动画
+    document.querySelector('button:has(i.fa-flag-checkered)').addEventListener('click', function() {
+      this.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 完成中...';
+      
+      setTimeout(() => {
+        this.innerHTML = '<i class="fa-solid fa-check mr-2"></i> 已完成';
+        this.classList.remove('bg-primary');
+        this.classList.add('bg-green-500');
+        
+        setTimeout(() => {
+          this.innerHTML = '<i class="fa-solid fa-flag-checkered mr-2"></i> 完成计时';
+          this.classList.remove('bg-green-500');
+          this.classList.add('bg-primary');
+        }, 2000);
+      }, 1500);
+    });
+  </script>
+</body>
+</html>    
